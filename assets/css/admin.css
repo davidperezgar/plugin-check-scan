@@ -1,0 +1,343 @@
+/* Plugin Check Scan Admin Styles */
+
+.pcsc-scanner-page {
+	max-width: 1200px;
+}
+
+/* Latest Score Widget */
+.pcsc-widget {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	padding: 20px;
+	margin: 20px 0;
+}
+
+.pcsc-score-display {
+	text-align: center;
+	padding: 30px;
+}
+
+.pcsc-score-number {
+	font-size: 72px;
+	font-weight: bold;
+	line-height: 1;
+	margin-bottom: 10px;
+}
+
+.pcsc-score-label {
+	font-size: 18px;
+	color: #666;
+	margin-bottom: 20px;
+}
+
+.pcsc-score-info {
+	margin-top: 20px;
+	padding-top: 20px;
+	border-top: 1px solid #ddd;
+}
+
+/* Score Colors */
+.pcsc-score-excellent .pcsc-score-number { color: #46b450; }
+.pcsc-score-good .pcsc-score-number { color: #00a0d2; }
+.pcsc-score-warning .pcsc-score-number { color: #ffb900; }
+.pcsc-score-danger .pcsc-score-number { color: #dc3232; }
+
+.pcsc-score-badge {
+	padding: 4px 12px;
+	border-radius: 3px;
+	font-weight: bold;
+	color: #fff;
+	display: inline-block;
+}
+
+.pcsc-score-badge.pcsc-score-excellent { background: #46b450; }
+.pcsc-score-badge.pcsc-score-good { background: #00a0d2; }
+.pcsc-score-badge.pcsc-score-warning { background: #ffb900; }
+.pcsc-score-badge.pcsc-score-danger { background: #dc3232; }
+
+/* Actions */
+.pcsc-actions {
+	text-align: center;
+	margin: 30px 0;
+}
+
+/* Progress Bar */
+.pcsc-scan-progress {
+	margin: 30px 0;
+	padding: 20px;
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+}
+
+.pcsc-progress-bar {
+	width: 100%;
+	height: 30px;
+	background: #f0f0f1;
+	border-radius: 3px;
+	overflow: hidden;
+	margin-bottom: 15px;
+}
+
+.pcsc-progress-fill {
+	height: 100%;
+	background: linear-gradient(90deg, #00a0d2 0%, #0073aa 100%);
+	transition: width 0.3s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #fff;
+	font-weight: bold;
+}
+
+.pcsc-progress-text {
+	font-size: 16px;
+	font-weight: 600;
+	text-align: center;
+	margin-bottom: 10px;
+	color: #1d2327;
+}
+
+.pcsc-progress-details {
+	font-size: 14px;
+	color: #666;
+	max-height: 400px;
+	overflow-y: auto;
+	margin-top: 15px;
+	padding: 10px;
+	background: #f9f9f9;
+	border-radius: 3px;
+}
+
+.pcsc-progress-info {
+	text-align: center;
+	padding: 5px 0;
+	color: #666;
+}
+
+.pcsc-progress-plugin-result {
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	padding: 12px 15px;
+	margin-bottom: 8px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	transition: background 0.2s ease;
+}
+
+.pcsc-progress-plugin-result:hover {
+	background: #f6f7f7;
+}
+
+.pcsc-progress-plugin-name {
+	font-weight: 600;
+	color: #1d2327;
+	flex: 1;
+	text-align: left;
+}
+
+.pcsc-progress-plugin-stats {
+	display: flex;
+	gap: 15px;
+	align-items: center;
+}
+
+.pcsc-stat-error,
+.pcsc-stat-warning,
+.pcsc-stat-error-low {
+	font-size: 12px;
+	font-weight: 600;
+	padding: 4px 10px;
+	border-radius: 3px;
+	white-space: nowrap;
+}
+
+.pcsc-stat-error {
+	background: #dc3232;
+	color: #fff;
+}
+
+.pcsc-stat-warning {
+	background: #ffb900;
+	color: #1d2327;
+}
+
+.pcsc-stat-error-low {
+	background: #f56e28;
+	color: #fff;
+}
+
+/* History */
+.pcsc-history {
+	margin: 40px 0;
+}
+
+/* Results Accordion */
+.pcsc-accordion {
+	margin-top: 20px;
+}
+
+.pcsc-accordion-item {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	margin-bottom: 10px;
+	overflow: hidden;
+}
+
+.pcsc-accordion-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 15px 20px;
+	cursor: pointer;
+	background: #f6f7f7;
+}
+
+.pcsc-accordion-header:hover {
+	background: #eee;
+}
+
+.pcsc-plugin-info {
+	flex: 1;
+}
+
+.pcsc-plugin-version {
+	margin-left: 10px;
+	color: #666;
+	font-size: 14px;
+}
+
+.pcsc-plugin-score {
+	display: flex;
+	align-items: center;
+	gap: 15px;
+}
+
+.pcsc-toggle {
+	transition: transform 0.3s ease;
+}
+
+.pcsc-accordion-item.active .pcsc-toggle {
+	transform: rotate(180deg);
+}
+
+.pcsc-accordion-content {
+	display: none;
+	padding: 20px;
+	border-top: 1px solid #ccd0d4;
+}
+
+.pcsc-accordion-item.active .pcsc-accordion-content {
+	display: block;
+}
+
+.pcsc-result-summary {
+	margin-bottom: 20px;
+	padding: 15px;
+	background: #f6f7f7;
+	border-radius: 4px;
+}
+
+.pcsc-issues {
+	margin: 20px 0;
+}
+
+.pcsc-issues h4 {
+	margin-bottom: 10px;
+}
+
+.pcsc-issues ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.pcsc-issues li {
+	padding: 8px 12px;
+	margin-bottom: 5px;
+	background: #f6f7f7;
+	border-left: 3px solid #ddd;
+}
+
+.pcsc-errors li {
+	background: #ffe6e6;
+	border-left-color: #dc3232;
+}
+
+.pcsc-warnings li {
+	background: #fff8e5;
+	border-left-color: #ffb900;
+}
+
+/* Dashboard Widget */
+.pcsc-dashboard-widget {
+	padding: 12px;
+}
+
+.pcsc-widget-score {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	margin-bottom: 20px;
+	padding: 20px;
+	background: #f6f7f7;
+	border-radius: 4px;
+}
+
+.pcsc-score-circle {
+	text-align: center;
+	min-width: 80px;
+}
+
+.pcsc-score-value {
+	font-size: 36px;
+	font-weight: bold;
+	display: block;
+}
+
+.pcsc-score-max {
+	font-size: 14px;
+	color: #666;
+}
+
+.pcsc-widget-score.pcsc-score-excellent .pcsc-score-value { color: #46b450; }
+.pcsc-widget-score.pcsc-score-good .pcsc-score-value { color: #00a0d2; }
+.pcsc-widget-score.pcsc-score-warning .pcsc-score-value { color: #ffb900; }
+.pcsc-widget-score.pcsc-score-danger .pcsc-score-value { color: #dc3232; }
+
+.pcsc-score-details h3 {
+	margin: 0 0 5px 0;
+	font-size: 16px;
+}
+
+.pcsc-score-details p {
+	margin: 5px 0;
+	font-size: 13px;
+}
+
+.pcsc-last-scan {
+	color: #666;
+}
+
+.pcsc-widget-actions {
+	display: flex;
+	gap: 10px;
+	margin-bottom: 15px;
+}
+
+.pcsc-widget-alert {
+	padding: 10px;
+	background: #ffe6e6;
+	border-left: 3px solid #dc3232;
+	border-radius: 3px;
+}
+
+.pcsc-widget-alert p {
+	margin: 0;
+	font-size: 13px;
+}
+
