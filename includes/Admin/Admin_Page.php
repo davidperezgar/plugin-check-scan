@@ -306,7 +306,11 @@ class Admin_Page {
 					<div class="pcsc-accordion-header">
 						<div class="pcsc-plugin-info">
 							<strong><?php echo esc_html( $result['name'] ); ?></strong>
-							<span class="pcsc-plugin-version"><?php echo esc_html( sprintf( __( 'v%s', 'plugin-check-scan' ), $result['version'] ) ); ?></span>
+							<?php
+							if ( isset( $result['version'] ) ) {
+								echo '<span class="pcsc-plugin-version">' . esc_html( sprintf( __( 'v%s', 'plugin-check-scan' ), $result['version'] ) ) . '</span>';
+							}
+							?>
 						</div>
 						<div class="pcsc-plugin-score">
 							<span class="pcsc-score-badge <?php echo esc_attr( $this->get_score_class( $result['score'] ) ); ?>">
@@ -327,8 +331,11 @@ class Admin_Page {
 							<div class="pcsc-issues pcsc-errors">
 								<h4><?php echo esc_html__( 'Errors', 'plugin-check-scan' ); ?></h4>
 								<ul>
-									<?php foreach ( $result['errors'] as $error ) : ?>
-										<li><?php echo esc_html( is_array( $error ) ? implode( ' - ', $error ) : $error ); ?></li>
+									<?php
+									$errors_list = $this->format_messages( $result['errors'] );
+									foreach ( $errors_list as $error ) :
+										?>
+										<li><?php echo esc_html( $error ); ?></li>
 									<?php endforeach; ?>
 								</ul>
 							</div>
@@ -338,8 +345,11 @@ class Admin_Page {
 							<div class="pcsc-issues pcsc-warnings">
 								<h4><?php echo esc_html__( 'Warnings', 'plugin-check-scan' ); ?></h4>
 								<ul>
-									<?php foreach ( $result['warnings'] as $warning ) : ?>
-										<li><?php echo esc_html( is_array( $warning ) ? implode( ' - ', $warning ) : $warning ); ?></li>
+									<?php
+									$warnings_list = $this->format_messages( $result['warnings'] );
+									foreach ( $warnings_list as $warning ) :
+										?>
+										<li><?php echo esc_html( $warning ); ?></li>
 									<?php endforeach; ?>
 								</ul>
 							</div>
@@ -373,6 +383,109 @@ class Admin_Page {
 		} else {
 			return 'pcsc-score-danger';
 		}
+	}
+
+	/**
+	 * Format messages array (handle both flat and nested structures).
+	 *
+	 * @param array $messages Messages array (can be flat strings or nested structure).
+	 * @return array Flat array of message strings.
+	 */
+	private function format_messages( array $messages ) {
+		$flat = array();
+
+		foreach ( $messages as $key => $message ) {
+			// If it's already a string, use it directly.
+			if ( is_string( $message ) ) {
+				$flat[] = $message;
+				continue;
+			}
+
+			// If it's an array, check if it's nested structure (file => line => column).
+			if ( is_array( $message ) ) {
+				// Check if this looks like nested structure (has numeric keys that are arrays).
+				$is_nested = false;
+				foreach ( $message as $sub_key => $sub_value ) {
+					if ( is_array( $sub_value ) ) {
+						$is_nested = true;
+						break;
+					}
+				}
+
+				if ( $is_nested ) {
+					// This is nested structure, flatten it.
+					$flat = array_merge( $flat, $this->flatten_nested_messages( $message ) );
+				} else {
+					// This is a simple array, try to extract message.
+					if ( isset( $message['message'] ) ) {
+						$msg = $message['message'];
+						if ( isset( $message['file'] ) && ! empty( $message['file'] ) ) {
+							$msg .= ' (' . $message['file'];
+							if ( isset( $message['line'] ) && ! empty( $message['line'] ) ) {
+								$msg .= ', line ' . $message['line'];
+							}
+							$msg .= ')';
+						}
+						$flat[] = $msg;
+					} else {
+						// Fallback: convert array to string.
+						$flat[] = implode( ' - ', array_filter( $message, 'is_string' ) );
+					}
+				}
+			}
+		}
+
+		return $flat;
+	}
+
+	/**
+	 * Flatten nested messages structure (for backward compatibility with old data).
+	 *
+	 * @param array $messages Nested messages array.
+	 * @return array Flat array of message strings.
+	 */
+	private function flatten_nested_messages( array $messages ) {
+		$flat = array();
+
+		foreach ( $messages as $file => $file_messages ) {
+			if ( ! is_array( $file_messages ) ) {
+				continue;
+			}
+
+			foreach ( $file_messages as $line => $line_messages ) {
+				if ( ! is_array( $line_messages ) ) {
+					continue;
+				}
+
+				foreach ( $line_messages as $column => $column_messages ) {
+					if ( ! is_array( $column_messages ) ) {
+						continue;
+					}
+					$message = isset( $column_messages['message'] ) ? $column_messages['message'] : '';
+
+					$parts = array();
+					if ( ! empty( $file ) && '' !== $file ) {
+						$parts[] = $file;
+					}
+					if ( ! empty( $line ) && 0 !== $line ) {
+						$parts[] = sprintf( 'line %d', $line );
+					}
+					if ( ! empty( $column ) && 0 !== $column ) {
+						$parts[] = sprintf( 'column %d', $column );
+					}
+
+					$location = ! empty( $parts ) ? ' (' . implode( ', ', $parts ) . ')' : '';
+
+					$code = isset( $column_messages['code'] ) && ! empty( $column_messages['code'] )
+						? ' [' . $column_messages['code'] . ']'
+						: '';
+
+					$flat[] = $message . $location . $code;
+				}
+			}
+		}
+
+		return $flat;
 	}
 
 	/**
@@ -426,6 +539,10 @@ class Admin_Page {
 				array( 'message' => __( 'Insufficient permissions.', 'plugin-check-scan' ) )
 			);
 		}
+
+		// Aumentar timeout para plugins grandes.
+		set_time_limit( 300 ); // 5 minutos por plugin.
+		ini_set( 'max_execution_time', '300' );
 
 		$plugin_file = isset( $_POST['plugin_file'] ) ? sanitize_text_field( wp_unslash( $_POST['plugin_file'] ) ) : '';
 		$plugin_slug = isset( $_POST['plugin_slug'] ) ? sanitize_text_field( wp_unslash( $_POST['plugin_slug'] ) ) : '';

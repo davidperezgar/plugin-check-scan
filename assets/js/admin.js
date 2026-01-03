@@ -9,6 +9,7 @@
 	let pluginsList = [];
 	let scannedResults = {};
 	let currentIndex = 0;
+	let pluginStartTime = null;
 
 	document.addEventListener('DOMContentLoaded', function() {
 		// Initialize accordion functionality.
@@ -128,7 +129,7 @@
 	/**
 	 * Update progress display.
 	 */
-	function updateProgress(current, total, text, pluginResult = null) {
+	function updateProgress(current, total, text, pluginResult = null, pluginName = null) {
 		const progressFill = document.querySelector('.pcsc-progress-fill');
 		const progressText = document.querySelector('.pcsc-progress-text');
 		const progressDetails = document.querySelector('.pcsc-progress-details');
@@ -138,27 +139,44 @@
 			progressFill.style.width = percentage + '%';
 		}
 
-		if (progressText && text) {
-			progressText.textContent = text;
+		if (progressText) {
+			if (pluginName && current > 0 && total > 0) {
+				// Show plugin name in progress text.
+				progressText.textContent = `Scanning plugin ${current} of ${total}: ${pluginName}...`;
+			} else if (text) {
+				progressText.textContent = text;
+			}
 		}
 
 		if (progressDetails) {
 			if (pluginResult) {
 				// Show plugin result details.
-				const pluginName = pluginResult.name || 'Unknown';
+				const resultPluginName = pluginResult.name || 'Unknown';
 				const errorCount = pluginResult.error_count || 0;
 				const errorLowCount = pluginResult.error_low_count || 0;
 				const warningCount = pluginResult.warning_count || 0;
+				const scanTime = pluginResult.scan_time || 0;
+				
+				// Format time.
+				let timeText = '';
+				if (scanTime > 0) {
+					if (scanTime < 1) {
+						timeText = `${Math.round(scanTime * 1000)}ms`;
+					} else {
+						timeText = `${scanTime.toFixed(1)}s`;
+					}
+				}
 				
 				// Create result item HTML.
 				const resultItem = document.createElement('div');
 				resultItem.className = 'pcsc-progress-plugin-result';
 				resultItem.innerHTML = `
-					<div class="pcsc-progress-plugin-name">${escapeHtml(pluginName)}</div>
+					<div class="pcsc-progress-plugin-name">${escapeHtml(resultPluginName)}</div>
 					<div class="pcsc-progress-plugin-stats">
 						<span class="pcsc-stat-error">ERRORS: ${errorCount}</span>
 						<span class="pcsc-stat-warning">WARNINGS: ${warningCount}</span>
 						<span class="pcsc-stat-error-low">ERROR_LOW: ${errorLowCount}</span>
+						${timeText ? `<span class="pcsc-stat-time">TIME: ${timeText}</span>` : ''}
 					</div>
 				`;
 				
@@ -167,13 +185,11 @@
 				
 				// Scroll to top to show latest result.
 				progressDetails.scrollTop = 0;
-			} else if (current > 0 && total > 0) {
-				// Show progress text.
+			} else if (current > 0 && total > 0 && pluginName) {
+				// Show progress text with plugin name.
 				const progressInfo = document.createElement('div');
 				progressInfo.className = 'pcsc-progress-info';
-				progressInfo.textContent = pcscAjax.i18n.scanningPlugin
-					.replace('%d', current)
-					.replace('%d', total);
+				progressInfo.textContent = `Scanning plugin ${current} of ${total}: ${pluginName}...`;
 				progressDetails.appendChild(progressInfo);
 			}
 		}
@@ -232,7 +248,12 @@
 		}
 
 		const plugin = pluginsList[currentIndex];
-		updateProgress(currentIndex + 1, pluginsList.length, pcscAjax.i18n.scanning);
+		
+		// Start timer for this plugin.
+		pluginStartTime = performance.now();
+		
+		// Update progress with plugin name.
+		updateProgress(currentIndex + 1, pluginsList.length, pcscAjax.i18n.scanning, null, plugin.name);
 
 		const data = new FormData();
 		data.append('action', 'pcsc_scan_single_plugin');
@@ -247,10 +268,15 @@
 		})
 		.then(response => response.json())
 		.then(response => {
+			// Calculate scan time.
+			const scanTime = pluginStartTime ? (performance.now() - pluginStartTime) / 1000 : 0;
+			
 			let result = null;
 			
 			if (response.success && response.data.result) {
 				result = response.data.result;
+				// Add scan time to result.
+				result.scan_time = scanTime;
 				scannedResults[response.data.plugin_file || plugin.file] = result;
 			} else {
 				// Check if it's a critical error (Plugin Check not activated).
@@ -268,7 +294,8 @@
 					score: 0,
 					error_count: 0,
 					error_low_count: 0,
-					warning_count: 0
+					warning_count: 0,
+					scan_time: scanTime
 				};
 				scannedResults[plugin.file] = result;
 			}
@@ -283,6 +310,9 @@
 			scanNextPlugin();
 		})
 		.catch(error => {
+			// Calculate scan time even on error.
+			const scanTime = pluginStartTime ? (performance.now() - pluginStartTime) / 1000 : 0;
+			
 			console.error('Error scanning plugin:', plugin.name, error);
 			// Store error and continue.
 			const errorResult = {
@@ -291,7 +321,8 @@
 				score: 0,
 				error_count: 0,
 				error_low_count: 0,
-				warning_count: 0
+				warning_count: 0,
+				scan_time: scanTime
 			};
 			scannedResults[plugin.file] = errorResult;
 			

@@ -123,7 +123,12 @@ class Scanner {
 			$runner->set_plugin( $plugin_file );
 			$runner->set_slug( $plugin_slug );
 			$runner->set_experimental_flag( false );
-			$runner->set_check_slugs( array() ); // Empty array = run all checks.
+			$runner->set_categories( array(
+				\WordPress\Plugin_Check\Checker\Check_Categories::CATEGORY_PLUGIN_REPO,
+			) );
+			
+			set_time_limit( 300 );
+			ini_set( 'max_execution_time', '300' );
 			
 			// Run checks - this handles all setup, preparation, and execution.
 			$check_result = $runner->run();
@@ -131,35 +136,28 @@ class Scanner {
 			// Calculate score based on results.
 			$score = $this->calculate_score( $check_result );
 
-			// Count errors by severity.
+			// Count errors by severity and flatten structure.
 			$errors         = $check_result->get_errors();
+			$warnings       = $check_result->get_warnings();
 			$error_count    = $check_result->get_error_count();
 			$error_low_count = 0;
 
-			// Count low severity errors (severity < 5).
-			foreach ( $errors as $file_errors ) {
-				foreach ( $file_errors as $line_errors ) {
-					foreach ( $line_errors as $column_errors ) {
-						foreach ( $column_errors as $error_data ) {
-							// Low severity errors are typically severity < 5.
-							if ( isset( $error_data['severity'] ) && $error_data['severity'] < 5 ) {
-								$error_low_count++;
-							}
-						}
-					}
-				}
-			}
+			// Flatten errors into readable format and count low severity.
+			$errors_flat = $this->flatten_messages( $errors, true, $error_low_count );
+
+			// Flatten warnings into readable format.
+			$warnings_flat = $this->flatten_messages( $warnings, false );
 
 			return array(
 				'name'           => $plugin_data['Name'],
 				'version'        => $plugin_data['Version'],
 				'author'         => $plugin_data['Author'],
 				'score'          => $score,
-				'errors'         => $errors,
-				'warnings'       => $check_result->get_warnings(),
+				'errors'         => $errors_flat,
+				'warnings'       => $warnings_flat,
 				'error_count'    => $error_count,
 				'error_low_count' => $error_low_count,
-				'warning_count'  => count( $check_result->get_warnings() ),
+				'warning_count'  => count( $warnings_flat ),
 				'timestamp'      => current_time( 'timestamp' ),
 			);
 		} catch ( \Exception $e ) {
@@ -185,8 +183,8 @@ class Scanner {
 	 * @return float Score between 0 and 100.
 	 */
 	private function calculate_score( $check_result ) {
-		$error_count   = count( $check_result->get_errors() );
-		$warning_count = count( $check_result->get_warnings() );
+		$error_count   = $check_result->get_error_count();
+		$warning_count = $check_result->get_warning_count();
 
 		// Base score.
 		$score = 100;
@@ -201,6 +199,57 @@ class Scanner {
 		$score = max( 0, min( 100, $score ) );
 
 		return round( $score, 2 );
+	}
+
+	/**
+	 * Flatten nested messages structure into readable array.
+	 *
+	 * @param array $messages Nested messages array (file => line => column => messages).
+	 * @param bool  $is_errors Whether these are errors (to count low severity).
+	 * @param int   $error_low_count Reference to count low severity errors (for errors only).
+	 * @return array Flat array of formatted message strings.
+	 */
+	private function flatten_messages( array $messages, $is_errors = false, &$error_low_count = 0 ) {
+		$flat = array();
+
+		foreach ( $messages as $file => $file_messages ) {
+			foreach ( $file_messages as $line => $line_messages ) {
+				foreach ( $line_messages as $column => $column_messages ) {
+					foreach ( $column_messages as $message_data ) {
+						// Count low severity errors (only for errors, not warnings).
+						if ( $is_errors && isset( $message_data['severity'] ) && $message_data['severity'] < 5 ) {
+							$error_low_count++;
+						}
+
+						// Build readable message.
+						$message = isset( $message_data['message'] ) ? $message_data['message'] : '';
+						
+						// Add file and line info if available.
+						$parts = array();
+						if ( ! empty( $file ) && '' !== $file ) {
+							$parts[] = $file;
+						}
+						if ( ! empty( $line ) && 0 !== $line ) {
+							$parts[] = sprintf( 'line %d', $line );
+						}
+						if ( ! empty( $column ) && 0 !== $column ) {
+							$parts[] = sprintf( 'column %d', $column );
+						}
+
+						$location = ! empty( $parts ) ? ' (' . implode( ', ', $parts ) . ')' : '';
+						
+						// Add code if available.
+						$code = isset( $message_data['code'] ) && ! empty( $message_data['code'] ) 
+							? ' [' . $message_data['code'] . ']' 
+							: '';
+
+						$flat[] = $message . $location . $code;
+					}
+				}
+			}
+		}
+
+		return $flat;
 	}
 
 	/**

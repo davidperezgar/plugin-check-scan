@@ -147,7 +147,8 @@
 
 .pcsc-stat-error,
 .pcsc-stat-warning,
-.pcsc-stat-error-low {
+.pcsc-stat-error-low,
+.pcsc-stat-time {
 	font-size: 12px;
 	font-weight: 600;
 	padding: 4px 10px;
@@ -167,6 +168,11 @@
 
 .pcsc-stat-error-low {
 	background: #f56e28;
+	color: #fff;
+}
+
+.pcsc-stat-time {
+	background: #0073aa;
 	color: #fff;
 }
 
